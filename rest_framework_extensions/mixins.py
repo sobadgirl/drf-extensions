@@ -3,38 +3,6 @@ from rest_framework_extensions.settings import extensions_api_settings
 from rest_framework import status, exceptions
 from rest_framework.generics import get_object_or_404
 
-class BulkCreateModelMixin:
-    """
-    Builk create model instance.
-    Just post data like:
-    [
-        {"name": "xxx"},
-        {"name": "xxx2"},
-    ]
-    """
-
-    def get_serializer(self, *args, **kwargs):
-        if isinstance(kwargs.get('data', {}), list):
-            kwargs['many'] = True
-        s = super().get_serializer(*args, **kwargs)
-        return s
-
-
-class MultiSerializerViewSetMixin:
-    """
-    serializer_action_classes = {
-        list: ListSerializer,
-        <action_name>: Serializer,
-        ...
-    }
-    """
-    serializer_classes = {}
-    def get_serializer_class(self):
-        try:
-            return self.serializer_classes[self.action]
-        except (KeyError, AttributeError):
-            return super(MultiSerializerViewSetMixin, self).get_serializer_class()
-
 
 class DetailSerializerMixin:
     """
@@ -84,6 +52,7 @@ class NestedViewSetMixin:
     parent_viewset = None
 
     def check_ownership(self, serializer):
+        return
         parent_query_dicts = self.get_parents_query_dict()
         if not parent_query_dicts:
             return
@@ -97,11 +66,21 @@ class NestedViewSetMixin:
         instance_datas = serializer.validated_data
         if not isinstance(instance_datas, list):
             instance_datas = [instance_datas]
-        received_parent_values = [
-            i.get(receive_key) for i in instance_datas if i.get(receive_key)]
+        received_parent_values = []
+        for data in instance_datas:
+            rv = data.get(receive_key)
+            if not rv:
+                continue
+            if isinstance(rv, list):
+                received_parent_values += rv
+            else:
+                received_parent_values.append(rv)
 
         # 1. check filled parent field
         if len(received_parent_values) != len(instance_datas):
+            print("Hello, World: ", self.detail)
+            if self.detail:
+                return
             raise exceptions.PermissionDenied(
                 detail=f"You must specific '{parent_lookup}'", code=status.HTTP_403_FORBIDDEN)
 
