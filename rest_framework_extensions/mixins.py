@@ -131,7 +131,7 @@ class NestedViewSetMixin:
                 lookup_name).related_model
         return parent_model
 
-    def check_parent_object_permissions(self, request):
+    def check_parent_permissions(self, request):
         # if parent viewset haven't init yet, then will raise no "kwargs" attribute error, but it doesn't matter, just ignore
         try:
             if not (parents_query_dict := self.get_parents_query_dict()):
@@ -155,17 +155,21 @@ class NestedViewSetMixin:
                 request, parent_obj
             )
 
+            parent_viewset.check_permissions(
+                request
+            )
+
             current_viewset = parent_viewset
 
     def check_permissions(self, request):
         super().check_permissions(request)
         if self.parent_viewset:
-            self.check_parent_object_permissions(request)
+            self.check_parent_permissions(request)
 
     def check_object_permissions(self, request, obj):
         super().check_object_permissions(request, obj)
         if self.parent_viewset:
-            self.check_parent_object_permissions(request)
+            self.check_parent_permissions(request)
 
     def get_queryset(self):
         return self.filter_queryset_by_parents_lookups(
