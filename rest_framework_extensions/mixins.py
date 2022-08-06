@@ -151,12 +151,13 @@ class NestedViewSetMixin:
                 parent_model.objects.all(),
                 **{parent_viewset.lookup_field: parent_model_lookup_value}
             )
-            parent_viewset.check_object_permissions(
-                request, parent_obj
-            )
 
             parent_viewset.check_permissions(
                 request
+            )
+
+            parent_viewset.check_object_permissions(
+                request, parent_obj
             )
 
             current_viewset = parent_viewset
